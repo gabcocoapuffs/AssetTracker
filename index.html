@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Store Inventory Checker</title>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --accent-color: #0284c7; /* Retail Blue */
+            --text-color: #1f2937;
+            --border-color: #d1d5db;
+            --success: #15803d;
+            --danger: #b91c1c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h2 {
+            margin-bottom: 5px;
+            text-align: center;
+            color: var(--accent-color);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #ffffff;
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0369a1;
+        }
+
+        #alertBox {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .alert-instock { background-color: #dcfce7; color: var(--success); border-left: 5px solid var(--success); }
+        .alert-outofstock { background-color: #fee2e2; color: var(--danger); border-left: 5px solid var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>SoleStyle Retail Kiosk</h2>
+    <p class="subtitle">Check real-time backroom inventory & request physical pairs</p>
+    
+    <form id="inventoryForm">
+        <div class="form-group">
+            <label for="custName">Customer Name</label>
+            <input type="text" id="custName" placeholder="Enter your name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="shoeModel">Select Shoe Model</label>
+            <select id="shoeModel" required>
+                <option value="">-- Choose a Style --</option>
+                <option value="Nike Pegasus 42">Nike Pegasus 42</option>
+                <option value="adidas Response Runner">adidas Response Runner 2</option>
+                <option value="Nike Vomero Plus">Nike Vomero Plus</option>
+                <option value="adidas Adizero EVO">adidas Adizero EVO SL</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="shoeSize">US Men's Size</label>
+            <select id="shoeSize" required>
+                <option value="">-- Select Size --</option>
+                <option value="7">7.0</option>
+                <option value="8">8.0</option>
+                <option value="8.5">8.5</option>
+                <option value="9">9.0</option>
+                <option value="9.5">9.5</option>
+                <option value="10">10.0</option>
+                <option value="11">11.0</option>
+                <option value="12">12.0</option>
+            </select>
+        </div>
+
+        <button type="submit">Check Stock Availability</button>
+    </form>
+
+    <div id="alertBox"></div>
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvjG4cvHNSZE7qFiellrC83OisQoymsu89GU-ov8ST9t0lk3eSorOrkgHFFX9rmmN_/exec';
+
+    document.getElementById('inventoryForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('custName').value.trim();
+        const shoeModel = document.getElementById('shoeModel').value;
+        const shoeSize = document.getElementById('shoeSize').value;
+        const alertBox = document.getElementById('alertBox');
+
+        // --- CONTROL STRUCTURE 1: Conditional (if / else) ---
+        // Simulates a complex stock database scenario. Let's pretend 8.5 and 9.5 are sold out.
+        let isAvailable = true;
+        if (shoeSize === "8.5" || shoeSize === "9.5") {
+            isAvailable = false;
+        } else {
+            isAvailable = true;
+        }
+
+        // --- CONTROL STRUCTURE 2: Multi-case Evaluation (switch / case) ---
+        // Determines what structural location/aisle in our store houses the model
+        let aisleLocation = "";
+        switch(shoeModel) {
+            case 'Nike Pegasus 42':
+            case 'Nike Vomero Plus':
+                aisleLocation = "Aisle A (Nike Performance Wall)";
+                break;
+            case 'adidas Response Runner':
+            case 'adidas Adizero EVO':
+                aisleLocation = "Aisle B (adidas Speed Zone)";
+                break;
+            default:
+                aisleLocation = "Main Display Carousel";
+        }
+
+        // Handle logical execution path based on stock condition variable status
+        let logStatusText = "";
+        if (isAvailable) {
+            alertBox.className = "alert-instock";
+            alertBox.innerHTML = `<strong>In Stock!</strong> A pair of size ${shoeSize} is waiting for you in <strong>${aisleLocation}</strong>. Our staff has been notified to pull it.`;
+            logStatusText = "Fulfilled - Pulled from Backroom";
+        } else {
+            alertBox.className = "alert-outofstock";
+            alertBox.innerHTML = `<strong>Out of Stock.</strong> Size ${shoeSize} is temporarily unavailable for ${shoeModel}. We can request a restock from our warehouse.`;
+            logStatusText = "Failed - Backorder Requested";
+        }
+        alertBox.style.display = 'block';
+
+        // Prepare object mapping structures precisely to your Spreadsheet backend variables
+        const payload = {
+            deviceName: name,           // maps to Customer Name column
+            deviceType: shoeModel,      // maps to Shoe Model column
+            ipAddress: shoeSize,        // maps to Size column
+            status: logStatusText       // maps to Availability Status column
+        };
+
+        // Stream data out to Google Apps Script
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            document.getElementById('inventoryForm').reset();
+        })
+        .catch(err => console.error("Sync Error: ", err));
+    });
+</script>
+
+</body>
+</html>
