@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Device Log</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #3b82f6;
+            --text-color: #f8fafc;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--accent-color);
+            font-size: 1.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            background-color: #0f172a;
+            color: white;
+            font-size: 1rem;
+            transition: border 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        #message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .msg-success { background-color: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .msg-error { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Network Device Registry</h2>
+    <form id="deviceForm">
+        <div class="form-group">
+            <label for="deviceName">Device Hostname</label>
+            <input type="text" id="deviceName" placeholder="e.g., Core-Switch-01" required>
+        </div>
+
+        <div class="form-group">
+            <label for="deviceType">Device Type</label>
+            <select id="deviceType" required>
+                <option value="">-- Select Type --</option>
+                <option value="Router">Router</option>
+                <option value="Switch">Switch</option>
+                <option value="Server">Server</option>
+                <option value="IoT Gateway">IoT Gateway</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="ipAddress">IP Address</label>
+            <input type="text" id="ipAddress" placeholder="e.g., 192.168.1.1" required>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Initial Status</label>
+            <select id="status" required>
+                <option value="Active">Active / Online</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Offline">Offline</option>
+            </select>
+        </div>
+
+        <button type="submit">Log Device</button>
+    </form>
+    
+    <div id="message"></div>
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxla5cYEl1s6TPbOyOncUJyXI256hGM01PiEOJK7x0yiCuf6oLe5pM0y2b_8-hUvNu/exec';
+
+    document.getElementById('deviceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const deviceName = document.getElementById('deviceName').value.trim();
+        const deviceType = document.getElementById('deviceType').value;
+        const ipAddress = document.getElementById('ipAddress').value.trim();
+        const status = document.getElementById('status').value;
+        const msgDiv = document.getElementById('message');
+
+        // --- JS CONTROL STRUCTURES (Validation Logic) ---
+        
+        // 1. Conditional structure (if/else) for basic regex validation of IP Address
+        const ipRegex = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+        
+        if (!ipRegex.test(ipAddress)) {
+            msgDiv.className = 'msg-error';
+            msgDiv.innerText = 'Error: Invalid IPv4 Address format.';
+            msgDiv.style.display = 'block';
+            return; // Halt execution flow
+        }
+
+        // 2. Control Structure: Switch-Case statement evaluating risk level based on selection
+        let isolationRequired = false;
+        switch(status) {
+            case 'Offline':
+            case 'Maintenance':
+                isolationRequired = true;
+                break;
+            default:
+                isolationRequired = false;
+        }
+
+        // Prepare data payload
+        const payload = {
+            deviceName: deviceName,
+            deviceType: deviceType,
+            ipAddress: ipAddress,
+            status: status
+        };
+
+        msgDiv.className = '';
+        msgDiv.style.display = 'block';
+        msgDiv.innerText = 'Processing entry...';
+
+        // Send data using Fetch API to Google Apps Script
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Needed for cross-origin Apps Script redirects
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            // Display clean message utilizing control statements flags
+            msgDiv.className = 'msg-success';
+            if (isolationRequired) {
+                msgDiv.innerText = 'Device logged successfully. Flagged for network isolation check.';
+            } else {
+                msgDiv.innerText = 'Device logged to Google Sheets successfully!';
+            }
+            document.getElementById('deviceForm').reset();
+        })
+        .catch(error => {
+            msgDiv.className = 'msg-error';
+            msgDiv.innerText = 'Submission failed. Check network connection.';
+            console.error('Error:', error);
+        });
+    });
+</script>
+
+</body>
+</html>
